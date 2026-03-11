@@ -247,17 +247,37 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup kubeconfig
+        id: kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
-          chmod 600 ~/.kube/config
+          if [[ -n "${{ secrets.KUBECONFIG }}" ]]; then
+            echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+            chmod 600 ~/.kube/config
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Secret KUBECONFIG non configuré — déploiement ignoré."
+          fi
+
+      - name: Check cluster reachability
+        id: cluster
+        if: steps.kubeconfig.outputs.configured == 'true'
+        run: |
+          if kubectl cluster-info --request-timeout=10s &>/dev/null; then
+            echo "reachable=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "reachable=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Cluster Kubernetes non joignable depuis GitHub Actions (Minikube local) — déploiement ignoré."
+          fi
 
       - name: Setup Helm
+        if: steps.cluster.outputs.reachable == 'true'
         uses: azure/setup-helm@v4
         with:
           version: 3.13.3
 
       - name: Deploy via Helm (upgrade --install)
+        if: steps.cluster.outputs.reachable == 'true'
         run: |
           helm upgrade --install pixel-war k8s/charts/pixel-war/ \
             --namespace pixel-war \
@@ -271,6 +291,7 @@ jobs:
 
       # ── Smoke test ────────────────────────────────────────────────────────────
       - name: Smoke test — /api/health
+        if: steps.cluster.outputs.reachable == 'true'
         run: |
           kubectl wait --for=condition=ready pod \
             -l app.kubernetes.io/component=backend \
@@ -281,11 +302,25 @@ jobs:
             curl -sf http://backend:3000/api/health | grep '"status":"ok"'
 
       - name: Smoke test — /api/grid
+        if: steps.cluster.outputs.reachable == 'true'
         run: |
           kubectl run smoke-grid --image=curlimages/curl:8.5.0 \
             --rm --restart=Never -it \
             -n pixel-war -- \
             curl -sf http://backend:3000/api/grid | grep '\[\]'
+
+      - name: Deploy summary
+        if: always()
+        run: |
+          if [[ "${{ steps.kubeconfig.outputs.configured }}" != "true" ]]; then
+            echo "### Deploy skipped — KUBECONFIG secret not set" >> "$GITHUB_STEP_SUMMARY"
+            echo "Set the **KUBECONFIG** repository secret to enable automatic deployments." >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "${{ steps.cluster.outputs.reachable }}" != "true" ]]; then
+            echo "### Deploy skipped — cluster not reachable from GitHub Actions" >> "$GITHUB_STEP_SUMMARY"
+            echo "Minikube runs locally and is not reachable from GitHub-hosted runners." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Deployed successfully" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       # ── GitHub Release (tags uniquement) ──────────────────────────────────────
       - name: Create GitHub Release
