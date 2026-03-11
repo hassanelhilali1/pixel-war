@@ -34,6 +34,7 @@ SETUP=false
 MINIKUBE_CPUS=4
 MINIKUBE_MEMORY=6g
 MINIKUBE_DRIVER=docker
+MINIKUBE_WORKERS=2   # nombre de workers requis (hors control-plane)
 
 # ── Arguments ─────────────────────────────────────────────────────────────────
 for arg in "$@"; do
@@ -116,12 +117,30 @@ start_minikube() {
   if [[ "$status" == "Running" ]]; then
     log_success "Minikube déjà en cours d'exécution"
   else
-    log_info "Démarrage de Minikube (cpus=$MINIKUBE_CPUS, memory=$MINIKUBE_MEMORY)..."
+    log_info "Démarrage de Minikube (cpus=$MINIKUBE_CPUS, memory=$MINIKUBE_MEMORY, nodes=$((MINIKUBE_WORKERS+1)))..."
     minikube start \
       --cpus="$MINIKUBE_CPUS" \
       --memory="$MINIKUBE_MEMORY" \
-      --driver="$MINIKUBE_DRIVER"
+      --driver="$MINIKUBE_DRIVER" \
+      --nodes="$((MINIKUBE_WORKERS + 1))"
     log_success "Minikube démarré"
+  fi
+
+  # ── Vérification et ajout des workers manquants ───────────────────────────
+  local current_workers
+  current_workers=$(kubectl get nodes --no-headers 2>/dev/null \
+    | grep -v "control-plane" | wc -l | tr -d ' ')
+
+  if [[ "$current_workers" -lt "$MINIKUBE_WORKERS" ]]; then
+    local to_add=$(( MINIKUBE_WORKERS - current_workers ))
+    log_info "$current_workers worker(s) présent(s), ajout de $to_add worker(s) manquant(s)..."
+    for ((i=1; i<=to_add; i++)); do
+      log_info "Ajout du worker $i/$to_add..."
+      minikube node add --worker
+      log_success "Worker $i ajouté"
+    done
+  else
+    log_success "$current_workers worker(s) présent(s) — aucun ajout nécessaire"
   fi
 
   log_info "Activation des addons..."
@@ -136,10 +155,13 @@ start_minikube() {
 # ── Étape 2 : Build des images dans Minikube ─────────────────────────────────
 build_images() {
   log_step "Étape 2 — Build des images Docker"
-  # Le client Docker système (API >= 1.44) ne peut pas se connecter au daemon
-  # interne de Minikube (API 1.43). Stratégie :
-  #   1. Build avec le Docker système (pas de minikube docker-env)
-  #   2. Sauvegarde en tar + chargement dans Minikube via `minikube image load`
+  # Garantir qu'on utilise le Docker SYSTÈME (pas le daemon interne de Minikube).
+  # Si l'utilisateur avait fait `eval $(minikube docker-env)` dans son shell,
+  # DOCKER_HOST pointe vers Minikube (API 1.43). docker build fonctionne grâce
+  # à BuildKit (gRPC, négocie la version), mais docker save utilise l'API REST
+  # classique et échoue avec "client version 1.52 is too new".
+  eval "$(minikube docker-env -u)" 2>/dev/null || true
+  unset DOCKER_HOST DOCKER_TLS_VERIFY DOCKER_CERT_PATH DOCKER_API_VERSION
 
   log_info "Build backend (Docker système)..."
   docker build -t pixel-war-backend:latest \
