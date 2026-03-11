@@ -132,11 +132,11 @@ jobs:
       - name: Scan IaC Terraform (Checkov)
         uses: bridgecrewio/checkov-action@v12
         with:
-          directory:    infra/terraform/
-          framework:    terraform
-          soft_fail:    true
-          output_format: sarif
-          output_file_path: checkov-tf.sarif
+          directory:         infra/terraform/
+          framework:         terraform
+          soft_fail:         true
+          output_format:     cli
+          output_file_path:  console
 
       - name: Scan manifests K8s (Checkov)
         uses: bridgecrewio/checkov-action@v12
@@ -144,12 +144,7 @@ jobs:
           directory:    k8s/
           framework:    helm
           soft_fail:    true
-
-      - name: Upload Checkov SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: checkov-tf.sarif
+          output_format: cli
 
   # ────────────────────────────────────────────────────────────────────────────
   # 4. BUILD & PUSH DOCKER
@@ -208,9 +203,9 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:${{ steps.meta-backend.outputs.version }}
-          format:    sarif
-          output:    trivy-backend.sarif
+          format:    table
           severity:  CRITICAL,HIGH
+          exit-code: 0
 
       # ── Frontend ─────────────────────────────────────────────────────────────
       - name: Docker metadata — Frontend
@@ -234,12 +229,6 @@ jobs:
           build-args: VITE_GRID_SIZE=50
           cache-from: type=gha
           cache-to:   type=gha,mode=max
-
-      - name: Upload Trivy SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-backend.sarif
 
   # ────────────────────────────────────────────────────────────────────────────
   # 5. DEPLOY (staging sur push main / production sur tag)
