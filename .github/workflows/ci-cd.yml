@@ -63,12 +63,8 @@ jobs:
       - name: Lint YAML (yamllint)
         uses: ibiqlik/action-yamllint@v3
         with:
-          file_or_dir:    infra/ansible/ k8s/
-          config_data: |
-            extends: default
-            rules:
-              line-length: {max: 120}
-              truthy: disable
+          file_or_dir:  infra/ansible/ k8s/
+          config_file:  .yamllint.yml
 
   # ────────────────────────────────────────────────────────────────────────────
   # 2. TESTS UNITAIRES

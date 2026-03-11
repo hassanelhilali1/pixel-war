@@ -76,5 +76,3 @@ ingress:
 # ── Network Policies ──────────────────────────────────────────────────────────
 networkPolicy:
   enabled: true
-
-
