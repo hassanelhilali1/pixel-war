@@ -1,10 +1,6 @@
-# ── kube-prometheus-stack — values Pixel War ─────────────────────────────────
-# Usage :
-#   helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
-#     --namespace monitoring --create-namespace \
-#     --values k8s/monitoring/values.yaml
+# config monitoring kube-prometheus-stack
 
-# ── Grafana ───────────────────────────────────────────────────────────────────
+# grafana
 grafana:
   adminPassword: "prom-operator"
 
@@ -14,7 +10,7 @@ grafana:
     hosts:
       - grafana.local
 
-  # Dashboards provisionés automatiquement
+  # dashboards
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -59,7 +55,7 @@ grafana:
             ]
           }
 
-# ── Prometheus ────────────────────────────────────────────────────────────────
+# prometheus
 prometheus:
   ingress:
     enabled:          true
@@ -68,11 +64,11 @@ prometheus:
       - prometheus.local
 
   prometheusSpec:
-    # Découverte automatique des ServiceMonitors dans tous les namespaces
+    # decouverte auto des servicemonitors
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues:     false
 
-    # Scraping additionnel pour le backend Pixel War
+    # scrape du backend pixel war
     additionalScrapeConfigs:
       - job_name: pixel-war-backend
         scrape_interval: 15s
@@ -92,7 +88,7 @@ prometheus:
             regex:        "([^:]+)(?::\\d+)?;(\\d+)"
             replacement:  "$1:$2"
 
-# ── Alertmanager ──────────────────────────────────────────────────────────────
+# alertmanager
 alertmanager:
   config:
     global:
@@ -106,9 +102,9 @@ alertmanager:
           receiver: 'default'
     receivers:
       - name: 'default'
-        # Configurer un vrai receiver (Slack, email…) en production
+        # TODO: configurer un vrai receiver (slack, email) en prod
 
-# ── Règles d'alertes personnalisées ──────────────────────────────────────────
+# alertes custom
 additionalPrometheusRulesMap:
   pixel-war-alerts:
     groups:

@@ -36,7 +36,7 @@ describe('GET /api/health', () => {
   });
 });
 
-// ── GET /api/grid ─────────────────────────────────────────────────────────────
+// tests pour GET /api/grid
 describe('GET /api/grid', () => {
   it('retourne un tableau de pixels', async () => {
     pool.query.mockResolvedValueOnce({
@@ -55,7 +55,7 @@ describe('GET /api/grid', () => {
   });
 });
 
-// ── PATCH /api/pixel ──────────────────────────────────────────────────────────
+// tests pour PATCH /api/pixel
 describe('PATCH /api/pixel', () => {
   it('met à jour un pixel valide', async () => {
     pool.query.mockResolvedValueOnce({ rows: [] });

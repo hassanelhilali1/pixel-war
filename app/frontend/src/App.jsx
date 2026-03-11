@@ -6,7 +6,7 @@ import ColorPicker from './components/ColorPicker.jsx';
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 const GRID_SIZE   = parseInt(import.meta.env.VITE_GRID_SIZE || '50', 10);
 
-/** Crée une grille vide (toutes les cases blanches) */
+// cree une grille vide (tout en blanc)
 function emptyGrid() {
   const g = {};
   for (let y = 0; y < GRID_SIZE; y++)
@@ -22,7 +22,7 @@ export default function App() {
   const [placing,       setPlacing]       = useState(false);
   const socketRef = useRef(null);
 
-  // ── Chargement initial de la grille ────────────────────────────────────────
+  // charge la grille depuis l'API au demarrage
   useEffect(() => {
     fetch(`${BACKEND_URL}/api/grid`)
       .then((r) => r.json())
@@ -36,7 +36,7 @@ export default function App() {
       .catch(console.error);
   }, []);
 
-  // ── Connexion WebSocket ─────────────────────────────────────────────────────
+  // connexion websocket pour les mises a jour en temps reel
   useEffect(() => {
     const socket = io(BACKEND_URL || window.location.origin, {
       transports: ['websocket', 'polling'],
@@ -46,7 +46,7 @@ export default function App() {
     socket.on('connect',    () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));
 
-    // Réception des mises à jour de pixels en temps réel
+    // quand un autre joueur pose un pixel
     socket.on('pixel:update', ({ x, y, color }) => {
       setGrid((prev) => ({ ...prev, [`${x},${y}`]: color }));
     });
@@ -54,7 +54,7 @@ export default function App() {
     return () => socket.disconnect();
   }, []);
 
-  // ── Clic sur un pixel ───────────────────────────────────────────────────────
+  // quand on clique sur un pixel de la grille
   const handlePixelClick = useCallback(
     async (x, y) => {
       if (placing) return;

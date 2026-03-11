@@ -1,7 +1,7 @@
 ---
-# Role: kubernetes_tools — Installation de kubectl et Helm
+# installation de kubectl et helm
 
-# ── kubectl ────────────────────────────────────────────────────────────────────
+# kubectl
 - name: Télécharger kubectl {{ kubectl_version }}
   ansible.builtin.get_url:
     url:  "https://dl.k8s.io/release/v{{ kubectl_version }}/bin/linux/amd64/kubectl"

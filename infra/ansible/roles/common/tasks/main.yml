@@ -1,5 +1,5 @@
 ---
-# Role: common — Paquets système de base et configuration générale
+# paquets de base et config systeme
 
 - name: Mettre à jour le cache APT
   ansible.builtin.apt:

@@ -1,9 +1,9 @@
-# ── Paramètres globaux ────────────────────────────────────────────────────────
+# config generale
 global:
   imageRegistry: ghcr.io
   imagePullSecrets: []
 
-# ── Frontend ──────────────────────────────────────────────────────────────────
+# frontend
 frontend:
   image:
     repository: pixel-war-frontend
@@ -27,12 +27,12 @@ frontend:
   env:
     VITE_GRID_SIZE: "50"
 
-# ── Backend ───────────────────────────────────────────────────────────────────
+# backend
 backend:
   image:
     repository: pixel-war-backend
     tag:        "latest"
-    pullPolicy: Never   # image locale Minikube, pas de pull depuis registry
+    pullPolicy: Never   # image locale dans minikube
 
   replicaCount: 2
 
@@ -48,7 +48,7 @@ backend:
     type: ClusterIP
     port: 3000
 
-  # Clés dans les ressources créées par Terraform
+  # references aux ressources creees par terraform
   secretName:    db-credentials
   configMapName: app-config
   dbHost:        postgresql.pixel-war.svc.cluster.local
@@ -63,17 +63,15 @@ backend:
     enabled:      true
     minAvailable: 1
 
-# ── Ingress ───────────────────────────────────────────────────────────────────
+# ingress
 ingress:
   enabled:          true
   ingressClassName: nginx
   host:             pixel-war.local
-  # Pour accès depuis d'autres PC sans modifier /etc/hosts :
-  # mettre useHostHeader: false expose l'app sur toute requête quelle que soit l'URL
   useHostHeader:    true
   tls:              false
   tlsSecretName:    pixel-war-tls
 
-# ── Network Policies ──────────────────────────────────────────────────────────
+# network policies
 networkPolicy:
   enabled: true

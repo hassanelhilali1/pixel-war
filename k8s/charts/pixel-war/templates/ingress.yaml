@@ -8,7 +8,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/proxy-read-timeout:    "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout:    "3600"
-    # Support WebSocket (socket.io) — géré nativement par nginx-ingress >= 0.9
+    # pour le support websocket
     nginx.ingress.kubernetes.io/proxy-http-version:    "1.1"
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
@@ -22,7 +22,7 @@ spec:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
-          # WebSocket
+          # websocket
           - path:     /socket.io/
             pathType: ImplementationSpecific
             backend:
@@ -30,7 +30,7 @@ spec:
                 name: backend
                 port:
                   number: {{ .Values.backend.service.port }}
-          # API REST
+          # api rest
           - path:     /api/
             pathType: Prefix
             backend:
@@ -38,7 +38,7 @@ spec:
                 name: backend
                 port:
                   number: {{ .Values.backend.service.port }}
-          # Métriques (accès interne seulement — à restreindre en prod)
+          # metriques prometheus
           - path:     /metrics
             pathType: Exact
             backend:
@@ -46,7 +46,7 @@ spec:
                 name: backend
                 port:
                   number: {{ .Values.backend.service.port }}
-          # Frontend SPA
+          # frontend
           - path:     /
             pathType: Prefix
             backend:

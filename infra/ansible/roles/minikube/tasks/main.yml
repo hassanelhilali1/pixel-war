@@ -1,5 +1,5 @@
 ---
-# Role: minikube — Installation, démarrage et configuration de Minikube
+# installation et demarrage de minikube
 
 - name: Télécharger Minikube {{ minikube_version }}
   ansible.builtin.get_url:
@@ -16,7 +16,7 @@
   ansible.builtin.debug:
     msg: "{{ minikube_check.stdout_lines[0] }}"
 
-# Démarrer Minikube en tant qu'utilisateur non-root
+# demarrer minikube en non-root
 - name: Vérifier si Minikube est déjà démarré
   become:      false
   become_user: "{{ deploy_user }}"
@@ -39,7 +39,7 @@
   register:     minikube_start
   changed_when: minikube_start.rc == 0
 
-# Activer les addons nécessaires
+# activer les addons
 - name: Activer les addons Minikube
   become:      false
   become_user: "{{ deploy_user }}"
@@ -52,7 +52,7 @@
   register:     addon_result
   changed_when: "'was successfully enabled' in addon_result.stdout"
 
-# Configurer /etc/hosts pour l'accès local
+# configurer /etc/hosts
 - name: Récupérer l'IP Minikube
   become:      false
   become_user: "{{ deploy_user }}"

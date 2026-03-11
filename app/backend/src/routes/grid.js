@@ -42,7 +42,7 @@ function createGridRouter(io) {
     }
   });
 
-  // ── PATCH /api/pixel — met à jour un pixel ────────────────────────────────
+  // met a jour un pixel (upsert dans la base)
   router.patch('/pixel', async (req, res) => {
     const { x, y, color } = req.body;
 
@@ -63,10 +63,10 @@ function createGridRouter(io) {
       );
       end();
 
-      // Instrumentation Prometheus
+      // compteur prometheus
       pixelsPlacedTotal.inc({ color });
 
-      // Diffusion en temps réel à tous les clients connectés
+      // envoie la maj a tous les clients connectes
       io.emit('pixel:update', { x, y, color });
 
       res.json({ x, y, color });

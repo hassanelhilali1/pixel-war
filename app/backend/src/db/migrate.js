@@ -1,6 +1,7 @@
 'use strict';
 const { pool } = require('./pool');
 
+// requete SQL pour creer la table pixels si elle existe pas
 const MIGRATION_SQL = `
   CREATE TABLE IF NOT EXISTS pixels (
     x          INTEGER  NOT NULL,

@@ -1,3 +1,4 @@
+// palette de couleurs disponibles
 const PRESET_COLORS = [
   '#000000', '#FFFFFF', '#808080', '#C0C0C0',
   '#FF0000', '#800000', '#FF6600', '#FF8C00',
@@ -6,9 +7,7 @@ const PRESET_COLORS = [
   '#FF00FF', '#800080', '#FF69B4', '#A52A2A',
 ];
 
-/**
- * Sélecteur de couleur avec palette de préréglages + couleur personnalisée.
- */
+// selecteur de couleur avec palette + couleur custom
 export default function ColorPicker({ color, onChange }) {
   return (
     <div className="color-picker">

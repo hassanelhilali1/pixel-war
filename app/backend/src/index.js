@@ -51,7 +51,7 @@ app.get('/metrics', async (_req, res) => {
   }
 });
 
-// ── WebSocket ─────────────────────────────────────────────────────────────────
+// websocket : on compte les connexions actives
 io.on('connection', (socket) => {
   wsConnectionsActive.inc();
   console.log(`[WS] Client connected:    ${socket.id}`);
@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// ── Bootstrap ─────────────────────────────────────────────────────────────────
+// demarre le serveur
 async function bootstrap() {
   await migrate();
   server.listen(PORT, () => {

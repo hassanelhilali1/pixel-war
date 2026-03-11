@@ -1,5 +1,5 @@
 ---
-# Role: terraform_tool — Installation de Terraform
+# installation de terraform
 
 - name: Télécharger Terraform {{ terraform_version }}
   ansible.builtin.get_url:
@@ -28,7 +28,7 @@
   ansible.builtin.debug:
     msg: "{{ terraform_check.stdout_lines[0] }}"
 
-# Activer l'autocomplétion pour l'utilisateur déployeur
+# autocompletion terraform
 - name: Activer l'autocomplétion Terraform (bash)
   become:      false
   become_user: "{{ deploy_user }}"

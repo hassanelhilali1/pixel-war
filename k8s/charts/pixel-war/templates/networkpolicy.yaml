@@ -1,5 +1,5 @@
 {{- if .Values.networkPolicy.enabled }}
-# ── Politique 1 : Le backend peut recevoir du frontend et de l'Ingress ─────────
+# le backend peut recevoir du trafic du frontend et de l'ingress
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -15,21 +15,21 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Autorise le frontend → backend
+    # frontend -> backend
     - from:
         - podSelector:
             matchLabels:
               app.kubernetes.io/component: frontend
       ports:
         - port: 3000
-    # Autorise l'Ingress Controller → backend
+    # ingress controller -> backend
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: ingress-nginx
       ports:
         - port: 3000
-    # Autorise Prometheus → /metrics
+    # prometheus -> /metrics
     - from:
         - namespaceSelector:
             matchLabels:
@@ -37,21 +37,21 @@ spec:
       ports:
         - port: 3000
   egress:
-    # Autorise backend → PostgreSQL uniquement
+    # backend -> postgresql
     - to:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: postgresql
       ports:
         - port: 5432
-    # DNS
+    # dns
     - ports:
         - port:     53
           protocol: UDP
         - port:     53
           protocol: TCP
 ---
-# ── Politique 2 : Le frontend ne peut accéder qu'au backend ───────────────────
+# le frontend peut seulement parler au backend
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

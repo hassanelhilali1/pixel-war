@@ -1,12 +1,9 @@
-# ── Développement local — équivalent de la stack Kubernetes ──────────────────
-# Usage : docker compose up --build
-# Application : http://localhost
-# Backend API : http://localhost:3000
-# Metrics     : http://localhost:3000/metrics
+# docker compose pour le dev local
+# docker compose up --build
 
 services:
 
-  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  # base de donnees
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -26,7 +23,7 @@ services:
     networks:
       - pixel-war-net
 
-  # ── Backend ─────────────────────────────────────────────────────────────────
+  # backend node.js
   backend:
     build:
       context: ./app/backend
@@ -46,7 +43,7 @@ services:
     networks:
       - pixel-war-net
 
-  # ── Frontend ─────────────────────────────────────────────────────────────────
+  # frontend react servi par nginx
   frontend:
     build:
       context: ./app/frontend

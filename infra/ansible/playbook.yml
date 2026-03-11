@@ -1,36 +1,24 @@
 ---
-# =============================================================================
-# Pixel War 2026 — Playbook de configuration de la machine hôte
-# =============================================================================
-# Configure l'environnement de développement/déploiement complet :
-#   - Docker Engine
-#   - kubectl, Helm
-#   - Minikube (démarrage + addons)
-#   - Terraform
-#
-# Usage :
-#   ansible-playbook -i inventory/localhost.yml playbook.yml
-#   ansible-playbook -i inventory/localhost.yml playbook.yml --tags docker
-# =============================================================================
+# playbook pour configurer la machine
 
-- name: "  Configurer la machine hôte Pixel War"
+- name: Configurer la machine Pixel War
   hosts: all
   become: true
   gather_facts: true
 
   vars:
-    # Versions des outils (modifiables en ligne de commande avec -e)
+    # versions des outils
     kubectl_version:   "1.28.3"
     helm_version:      "3.13.3"
     terraform_version: "1.6.6"
     minikube_version:  "1.32.0"
 
-    # Configuration Minikube
+    # config minikube
     minikube_driver: docker
     minikube_cpus:   4
     minikube_memory: "6g"
 
-    # Utilisateur qui exécutera minikube (non-root)
+    # utilisateur non-root
     deploy_user: "{{ ansible_facts['env']['SUDO_USER'] | default(ansible_facts['user_id']) }}"
 
   roles:

@@ -1,7 +1,7 @@
 ---
-# Role: docker — Installation et configuration de Docker Engine
+# installation de docker
 
-# Détection préalable : si docker est déjà installé, on saute l'installation
+# on verifie d'abord si docker est deja la
 - name: Vérifier si Docker est déjà installé
   ansible.builtin.command: docker --version
   register:     docker_already_installed

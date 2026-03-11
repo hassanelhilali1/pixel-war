@@ -38,12 +38,12 @@ resource "kubernetes_namespace" "pixel_war" {
     }
 
     annotations = {
-      description = "ISIMA Pixel War 2026 — Namespace géré par Terraform"
+      description = "Pixel War 2026"
     }
   }
 }
 
-# ── Resource Quota ─────────────────────────────────────────────────────────────
+# quota de ressources pour limiter la conso
 resource "kubernetes_resource_quota" "pixel_war" {
   metadata {
     name      = "pixel-war-quota"
@@ -62,7 +62,7 @@ resource "kubernetes_resource_quota" "pixel_war" {
   }
 }
 
-# ── Limit Range ────────────────────────────────────────────────────────────────
+# limites par defaut pour les conteneurs
 resource "kubernetes_limit_range" "pixel_war" {
   metadata {
     name      = "pixel-war-limits"
@@ -91,7 +91,7 @@ resource "kubernetes_limit_range" "pixel_war" {
   }
 }
 
-# ── Secret : identifiants base de données ────────────────────────────────────
+# secret avec les identifiants de la base de donnees
 resource "kubernetes_secret" "db_credentials" {
   metadata {
     name      = "db-credentials"
@@ -107,14 +107,14 @@ resource "kubernetes_secret" "db_credentials" {
     POSTGRES_USER     = var.db_user
     POSTGRES_PASSWORD = var.db_password
     POSTGRES_DB       = var.db_name
-    # URL complète injectée directement dans le backend
+    # URL de connexion pour le backend
     DATABASE_URL = "postgresql://${var.db_user}:${var.db_password}@postgresql.${var.namespace}.svc.cluster.local:5432/${var.db_name}"
   }
 
   type = "Opaque"
 }
 
-# ── ConfigMap : variables non-sensibles ───────────────────────────────────────
+# configmap avec les variables non sensibles
 resource "kubernetes_config_map" "app_config" {
   metadata {
     name      = "app-config"
@@ -135,8 +135,7 @@ resource "kubernetes_config_map" "app_config" {
   }
 }
 
-# ── PostgreSQL — StatefulSet natif (postgres:16-alpine) ──────────────────────
-# Déployé directement via Terraform sans chart Bitnami (image locale disponible)
+# postgresql deploye en statefulset
 resource "kubernetes_stateful_set" "postgresql" {
   metadata {
     name      = "postgresql"
@@ -268,7 +267,7 @@ resource "kubernetes_stateful_set" "postgresql" {
   depends_on = [kubernetes_namespace.pixel_war]
 }
 
-# ── Service ClusterIP PostgreSQL ──────────────────────────────────────────────
+# service clusterip pour postgresql
 resource "kubernetes_service" "postgresql" {
   metadata {
     name      = "postgresql"
@@ -293,7 +292,7 @@ resource "kubernetes_service" "postgresql" {
   }
 }
 
-# ── Service Headless PostgreSQL (StatefulSet) ─────────────────────────────────
+# service headless pour le statefulset
 resource "kubernetes_service" "postgresql_hl" {
   metadata {
     name      = "postgresql-hl"

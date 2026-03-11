@@ -1,4 +1,4 @@
-/* ── Reset & base ─────────────────────────────────────────────────────────── */
+/* reset */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -8,7 +8,7 @@ body {
   min-height: 100vh;
 }
 
-/* ── App layout ──────────────────────────────────────────────────────────── */
+/* layout general */
 .app {
   display: flex;
   flex-direction: column;
@@ -18,7 +18,7 @@ body {
   gap: 16px;
 }
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
+/* header */
 .app-header {
   width: 100%;
   max-width: 900px;
@@ -50,7 +50,7 @@ body {
 
 .grid-info { font-size: 0.78rem; color: #888; }
 
-/* ── Color picker ────────────────────────────────────────────────────────── */
+/* selecteur de couleur */
 .color-picker {
   display: flex;
   flex-wrap: wrap;
@@ -111,7 +111,7 @@ body {
   text-align: center;
 }
 
-/* ── Grid ────────────────────────────────────────────────────────────────── */
+/* grille */
 .grid-wrapper {
   overflow: auto;
   max-width: 100%;
@@ -132,7 +132,7 @@ body {
 }
 .pixel:hover { filter: brightness(1.25); }
 
-/* ── Footer ──────────────────────────────────────────────────────────────── */
+/* footer */
 .app-footer {
   font-size: 0.72rem;
   color: #555;

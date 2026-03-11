@@ -1,6 +1,7 @@
 'use strict';
 const { Pool } = require('pg');
 
+// on peut se connecter soit avec DATABASE_URL soit avec les variables separees
 const config = process.env.DATABASE_URL
   ? { connectionString: process.env.DATABASE_URL }
   : {
