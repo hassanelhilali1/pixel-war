@@ -18,7 +18,7 @@ async function migrate() {
   try {
     console.log('[DB] Running migrations…');
     await client.query(MIGRATION_SQL);
-    console.log('[DB] Migrations complete ✓');
+    console.log('[DB] Migrations complete ');
   } catch (err) {
     console.error('[DB] Migration failed:', err.message);
     throw err;

@@ -65,6 +65,12 @@ variable "log_level" {
   }
 }
 
+variable "postgresql_chart_version" {
+  description = "Version du chart Helm Bitnami PostgreSQL (conservé pour compatibilité)"
+  type        = string
+  default     = "13.2.24"
+}
+
 
 
 

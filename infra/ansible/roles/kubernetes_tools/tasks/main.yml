@@ -9,27 +9,35 @@
     mode: "0755"
 
 - name: Vérifier kubectl
-  ansible.builtin.command: kubectl version --client --short
+  ansible.builtin.command: kubectl version --client --output=yaml
   register:     kubectl_check
   changed_when: false
   ignore_errors: true
 
 - name: Afficher la version kubectl
   ansible.builtin.debug:
-    msg: "{{ kubectl_check.stdout }}"
+    msg: "{{ kubectl_check.stdout | default('kubectl installé') }}"
 
 # ── Helm ───────────────────────────────────────────────────────────────────────
+- name: Vérifier la version Helm installée
+  ansible.builtin.command: helm version --short
+  register:     helm_installed
+  changed_when: false
+  failed_when:  false
+
 - name: Télécharger Helm {{ helm_version }}
   ansible.builtin.get_url:
     url:  "https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz"
     dest: /tmp/helm.tar.gz
     mode: "0644"
+  when: helm_version not in (helm_installed.stdout | default(''))
 
 - name: Extraire Helm
   ansible.builtin.unarchive:
     src:        /tmp/helm.tar.gz
     dest:       /tmp/
     remote_src: true
+  when: helm_version not in (helm_installed.stdout | default(''))
 
 - name: Installer Helm dans /usr/local/bin
   ansible.builtin.copy:
@@ -37,6 +45,7 @@
     dest:       /usr/local/bin/helm
     mode:       "0755"
     remote_src: true
+  when: helm_version not in (helm_installed.stdout | default(''))
 
 - name: Nettoyer les archives temporaires
   ansible.builtin.file:
@@ -45,6 +54,7 @@
   loop:
     - /tmp/helm.tar.gz
     - /tmp/linux-amd64
+  when: helm_version not in (helm_installed.stdout | default(''))
 
 - name: Ajouter les dépôts Helm essentiels
   become:      false

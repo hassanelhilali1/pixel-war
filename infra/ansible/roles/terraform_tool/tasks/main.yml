@@ -33,7 +33,8 @@
   become:      false
   become_user: "{{ deploy_user }}"
   ansible.builtin.lineinfile:
-    path:   "{{ ansible_env.HOME }}/.bashrc"
+    path:   "/home/{{ deploy_user }}/.bashrc"
     line:   "complete -C /usr/local/bin/terraform terraform"
     state:  present
+    create: true
   ignore_errors: true

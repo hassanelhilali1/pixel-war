@@ -47,12 +47,26 @@ spec:
             - configMapRef:
                 name: {{ .Values.backend.configMapName }}
           # Variables sensibles depuis Secret (créé par Terraform)
+          # On n'utilise PAS DATABASE_URL car le mot de passe contient '@'
+          # ce qui casse le parsing des URL PostgreSQL.
+          # On injecte les variables individuelles : le backend bascule
+          # automatiquement sur le chemin DB_HOST/POSTGRES_* de pool.js.
           env:
-            - name:  DATABASE_URL
+            - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.backend.secretName }}
-                  key:  DATABASE_URL
+                  key:  POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName }}
+                  key:  POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backend.secretName }}
+                  key:  POSTGRES_DB
           # Sécurité du conteneur
           securityContext:
             allowPrivilegeEscalation: false

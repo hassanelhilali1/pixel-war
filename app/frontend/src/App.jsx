@@ -78,10 +78,10 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>🎨 Pixel War 2026</h1>
+        <h1> Pixel War 2026</h1>
         <div className="header-right">
           <span className={`badge ${connected ? 'badge-ok' : 'badge-err'}`}>
-            {connected ? '🟢 Connecté' : '🔴 Déconnecté'}
+            {connected ? ' Connecté' : ' Déconnecté'}
           </span>
           <span className="grid-info">Grille {GRID_SIZE}×{GRID_SIZE}</span>
         </div>

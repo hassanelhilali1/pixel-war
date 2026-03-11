@@ -66,7 +66,7 @@ io.on('connection', (socket) => {
 async function bootstrap() {
   await migrate();
   server.listen(PORT, () => {
-    console.log(`✅  Backend listening on port ${PORT}`);
+    console.log(`  Backend listening on port ${PORT}`);
     console.log(`    Health  → http://localhost:${PORT}/api/health`);
     console.log(`    Metrics → http://localhost:${PORT}/metrics`);
   });
@@ -74,7 +74,7 @@ async function bootstrap() {
 
 if (require.main === module) {
   bootstrap().catch((err) => {
-    console.error('❌  Bootstrap failed:', err);
+    console.error('  Bootstrap failed:', err);
     process.exit(1);
   });
 }
