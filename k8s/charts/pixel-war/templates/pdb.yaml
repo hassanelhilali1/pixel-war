@@ -1,0 +1,15 @@
+{{- if .Values.backend.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "pixel-war.fullname" . }}-backend
+  labels:
+    {{- include "pixel-war.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  minAvailable: {{ .Values.backend.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "pixel-war.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+{{- end }}

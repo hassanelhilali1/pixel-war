@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pixel-war.fullname" . }}-frontend
+  labels:
+    {{- include "pixel-war.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pixel-war.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge:       1
+  template:
+    metadata:
+      labels:
+        {{- include "pixel-war.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
+      annotations:
+        rollme: {{ .Values.frontend.image.tag | quote }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser:    101   # nginx user
+        fsGroup:      101
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - name:          http
+              containerPort: 80
+              protocol:      TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem:   true
+            capabilities:
+              drop: [ALL]
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds:       10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds:       20
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+          volumeMounts:
+            - name:      cache
+              mountPath: /var/cache/nginx
+            - name:      run
+              mountPath: /var/run
+            - name:      tmp
+              mountPath: /tmp
+      volumes:
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

@@ -1,0 +1,27 @@
+{
+  "name": "pixel-war-backend",
+  "version": "1.0.0",
+  "description": "Pixel War backend — Node.js + Express + socket.io + PostgreSQL",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest --coverage --forceExit",
+    "lint": "eslint src/ --ext .js --max-warnings 0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "pg": "^8.11.3",
+    "prom-client": "^15.1.2",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.4"
+  }
+}

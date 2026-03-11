@@ -1,0 +1,312 @@
+name: CI/CD — Pixel War 2026
+
+on:
+  push:
+    branches: [main]
+    tags:     ['v*.*.*']
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY:     ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/pixel-war
+
+# ── Jobs ──────────────────────────────────────────────────────────────────────
+jobs:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 1. LINT & FORMAT
+  # ────────────────────────────────────────────────────────────────────────────
+  lint:
+    name: "🔍 Lint & Format"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            app/backend/package-lock.json
+            app/frontend/package-lock.json
+
+      - name: Install backend deps
+        run:  npm ci
+        working-directory: app/backend
+
+      - name: Install frontend deps
+        run:  npm ci
+        working-directory: app/frontend
+
+      - name: ESLint — Backend
+        run:  npm run lint
+        working-directory: app/backend
+
+      - name: ESLint — Frontend
+        run:  npm run lint
+        working-directory: app/frontend
+
+      - name: Lint Dockerfiles (hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile:    app/backend/Dockerfile
+          ignore:        DL3008,DL3018
+
+      - name: Lint Dockerfiles — Frontend (hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile:    app/frontend/Dockerfile
+          ignore:        DL3008,DL3018
+
+      - name: Lint YAML (yamllint)
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir:    infra/ansible/ k8s/
+          config_data: |
+            extends: default
+            rules:
+              line-length: {max: 120}
+              truthy: disable
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 2. TESTS UNITAIRES
+  # ────────────────────────────────────────────────────────────────────────────
+  test:
+    name: "🧪 Tests unitaires"
+    runs-on: ubuntu-latest
+    needs:   lint
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER:     pixelwar
+          POSTGRES_PASSWORD: pixelwar
+          POSTGRES_DB:       pixelwar_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pixelwar"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/backend/package-lock.json
+
+      - name: Install deps
+        run:  npm ci
+        working-directory: app/backend
+
+      - name: Run tests with coverage
+        run:  npm test
+        working-directory: app/backend
+        env:
+          DATABASE_URL: postgresql://pixelwar:pixelwar@localhost:5432/pixelwar_test
+          GRID_SIZE:    50
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: app/backend/coverage/
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 3. SECURITY SCAN
+  # ────────────────────────────────────────────────────────────────────────────
+  security:
+    name: "🔒 Security Scan"
+    runs-on: ubuntu-latest
+    needs:   lint
+    # Scan uniquement en cas de push (pas sur les PR externes)
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan IaC Terraform (Checkov)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory:    infra/terraform/
+          framework:    terraform
+          soft_fail:    true
+          output_format: sarif
+          output_file_path: checkov-tf.sarif
+
+      - name: Scan manifests K8s (Checkov)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory:    k8s/
+          framework:    helm
+          soft_fail:    true
+
+      - name: Upload Checkov SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov-tf.sarif
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 4. BUILD & PUSH DOCKER
+  # ────────────────────────────────────────────────────────────────────────────
+  build:
+    name: "🐳 Build & Push"
+    runs-on: ubuntu-latest
+    needs:   [test, security]
+    if: github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      backend_tag:  ${{ steps.meta-backend.outputs.version }}
+      frontend_tag: ${{ steps.meta-frontend.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Backend ──────────────────────────────────────────────────────────────
+      - name: Docker metadata — Backend
+        id:   meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      - name: Build & Push — Backend
+        uses: docker/build-push-action@v5
+        with:
+          context:    app/backend
+          target:     production
+          push:       true
+          tags:       ${{ steps.meta-backend.outputs.tags }}
+          labels:     ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+      # ── Trivy scan Backend ────────────────────────────────────────────────────
+      - name: Trivy — Scan image backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-backend:${{ steps.meta-backend.outputs.version }}
+          format:    sarif
+          output:    trivy-backend.sarif
+          severity:  CRITICAL,HIGH
+
+      # ── Frontend ─────────────────────────────────────────────────────────────
+      - name: Docker metadata — Frontend
+        id:   meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-frontend
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      - name: Build & Push — Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context:    app/frontend
+          target:     production
+          push:       true
+          tags:       ${{ steps.meta-frontend.outputs.tags }}
+          labels:     ${{ steps.meta-frontend.outputs.labels }}
+          build-args: VITE_GRID_SIZE=50
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-backend.sarif
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 5. DEPLOY (staging sur push main / production sur tag)
+  # ────────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: "🚀 Deploy"
+    runs-on: ubuntu-latest
+    needs:   build
+    if: github.event_name == 'push'
+
+    environment:
+      name: ${{ startsWith(github.ref, 'refs/tags/') && 'production' || 'staging' }}
+      url:  http://pixel-war.local
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 3.13.3
+
+      - name: Deploy via Helm (upgrade --install)
+        run: |
+          helm upgrade --install pixel-war k8s/charts/pixel-war/ \
+            --namespace pixel-war \
+            --create-namespace \
+            --values k8s/charts/pixel-war/values.yaml \
+            --set backend.image.tag=${{ needs.build.outputs.backend_tag }} \
+            --set frontend.image.tag=${{ needs.build.outputs.frontend_tag }} \
+            --wait \
+            --timeout 5m \
+            --atomic
+
+      # ── Smoke test ────────────────────────────────────────────────────────────
+      - name: Smoke test — /api/health
+        run: |
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/component=backend \
+            -n pixel-war --timeout=120s
+          kubectl run smoke-test --image=curlimages/curl:8.5.0 \
+            --rm --restart=Never -it \
+            -n pixel-war -- \
+            curl -sf http://backend:3000/api/health | grep '"status":"ok"'
+
+      - name: Smoke test — /api/grid
+        run: |
+          kubectl run smoke-grid --image=curlimages/curl:8.5.0 \
+            --rm --restart=Never -it \
+            -n pixel-war -- \
+            curl -sf http://backend:3000/api/grid | grep '\[\]'
+
+      # ── GitHub Release (tags uniquement) ──────────────────────────────────────
+      - name: Create GitHub Release
+        if:   startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            k8s/charts/pixel-war/Chart.yaml

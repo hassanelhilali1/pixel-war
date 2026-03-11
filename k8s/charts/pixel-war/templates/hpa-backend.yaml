@@ -1,0 +1,36 @@
+{{- if .Values.backend.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "pixel-war.fullname" . }}-backend
+  labels:
+    {{- include "pixel-war.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind:       Deployment
+    name:       {{ include "pixel-war.fullname" . }}-backend
+  minReplicas: {{ .Values.backend.hpa.minReplicas }}
+  maxReplicas: {{ .Values.backend.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type:               Utilization
+          averageUtilization: {{ .Values.backend.hpa.cpuTarget }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type:          Pods
+          value:         2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type:          Pods
+          value:         1
+          periodSeconds: 120
+{{- end }}

@@ -1,0 +1,14 @@
+# ── Copier ce fichier vers terraform.tfvars et remplir les valeurs ────────────
+# ⚠️  terraform.tfvars est dans .gitignore — NE JAMAIS COMMITER CE FICHIER
+
+namespace   = "pixel-war"
+environment = "production"
+grid_size   = 50
+log_level   = "info"
+
+# PostgreSQL
+db_user     = "pixelwar"
+db_password = "CHANGE_ME_STRONG_PASSWORD_12_CHARS_MIN"
+db_name     = "pixelwar"
+
+postgresql_chart_version = "13.2.24"

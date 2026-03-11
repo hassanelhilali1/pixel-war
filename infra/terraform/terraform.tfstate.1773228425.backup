@@ -1,0 +1,424 @@
+{
+  "version": 4,
+  "terraform_version": "1.6.6",
+  "serial": 12,
+  "lineage": "cb515fe8-89b0-6328-8315-2aa0dda7cb80",
+  "outputs": {
+    "app_configmap_name": {
+      "value": "app-config",
+      "type": "string"
+    },
+    "db_secret_name": {
+      "value": "db-credentials",
+      "type": "string"
+    },
+    "namespace": {
+      "value": "pixel-war",
+      "type": "string"
+    },
+    "postgresql_release_status": {
+      "value": "deployed",
+      "type": "string"
+    },
+    "postgresql_service_host": {
+      "value": "postgresql.pixel-war.svc.cluster.local",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "helm_release",
+      "name": "postgresql",
+      "provider": "provider[\"registry.terraform.io/hashicorp/helm\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "atomic": false,
+            "chart": "postgresql",
+            "cleanup_on_fail": false,
+            "create_namespace": false,
+            "dependency_update": false,
+            "description": "Install complete",
+            "devel": null,
+            "disable_crd_hooks": false,
+            "disable_openapi_validation": false,
+            "disable_webhooks": false,
+            "force_update": false,
+            "id": "postgresql",
+            "keyring": null,
+            "lint": false,
+            "manifest": null,
+            "max_history": 0,
+            "metadata": [
+              {
+                "app_version": "18.3.0",
+                "chart": "postgresql",
+                "first_deployed": 1773224061,
+                "last_deployed": 1773224061,
+                "name": "postgresql",
+                "namespace": "pixel-war",
+                "notes": "\nCHART NAME: postgresql\nCHART VERSION: 18.5.6\nAPP VERSION: 18.3.0\n\n⚠ WARNING: Since August 28th, 2025, only a limited subset of images/charts are available for free.\n    Subscribe to Bitnami Secure Images to receive continued support and security updates.\n    More info at https://bitnami.com and https://github.com/bitnami/containers/issues/83267\n\n** Please be patient while the chart is being deployed **\n\nPostgreSQL can be accessed via port 5432 on the following DNS names from within your cluster:\n\n    postgresql.pixel-war.svc.cluster.local - Read/Write connection\n\nTo get the password for \"postgres\" run:\n\n    export POSTGRES_ADMIN_PASSWORD=$(kubectl get secret --namespace pixel-war postgresql -o jsonpath=\"{.data.postgres-password}\" | base64 -d)\n\nTo get the password for \"pixelwar\" run:\n\n    export POSTGRES_PASSWORD=$(kubectl get secret --namespace pixel-war postgresql -o jsonpath=\"{.data.password}\" | base64 -d)\n\nTo connect to your database run the following command:\n\n    kubectl run postgresql-client --rm --tty -i --restart='Never' --namespace pixel-war --image registry-1.docker.io/bitnami/postgresql:latest --env=\"PGPASSWORD=$POSTGRES_PASSWORD\" \\\n      --command -- psql --host postgresql -U pixelwar -d pixelwar -p 5432\n\n    \u003e NOTE: If you access the container using bash, make sure that you execute \"/opt/bitnami/scripts/postgresql/entrypoint.sh /bin/bash\" in order to avoid the error \"psql: local user with ID 1001} does not exist\"\n\nTo connect to your database from outside the cluster execute the following commands:\n\n    kubectl port-forward --namespace pixel-war svc/postgresql 5432:5432 \u0026\n    PGPASSWORD=\"$POSTGRES_PASSWORD\" psql --host 127.0.0.1 -U pixelwar -d pixelwar -p 5432\n\nWARNING: The configured password will be ignored on new installation in case when previous PostgreSQL release was deleted through the helm command. In that case, old PVC will have an old password, and setting it through helm won't take effect. Deleting persistent volumes (PVs) will solve the issue.\nWARNING: Rolling tag detected (bitnami/postgresql:latest), please note that it is strongly recommended to avoid using rolling tags in a production environment.\n+info https://techdocs.broadcom.com/us/en/vmware-tanzu/bitnami-secure-images/bitnami-secure-images/services/bsi-doc/apps-tutorials-understand-rolling-tags-containers-index.html\nWARNING: Rolling tag detected (bitnami/os-shell:latest), please note that it is strongly recommended to avoid using rolling tags in a production environment.\n+info https://techdocs.broadcom.com/us/en/vmware-tanzu/bitnami-secure-images/bitnami-secure-images/services/bsi-doc/apps-tutorials-understand-rolling-tags-containers-index.html\n\nWARNING: There are \"resources\" sections in the chart not set. Using \"resourcesPreset\" is not recommended for production. For production installations, please set the following values according to your workload needs:\n  - readReplicas.resources\n+info https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n",
+                "revision": 1,
+                "values": "{\"auth\":{\"database\":\"pixelwar\",\"password\":\"PixelWar2026!Secure\",\"username\":\"pixelwar\"},\"primary\":{\"persistence\":{\"enabled\":true,\"size\":\"1Gi\"},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}}}}",
+                "version": "18.5.6"
+              }
+            ],
+            "name": "postgresql",
+            "namespace": "pixel-war",
+            "pass_credentials": false,
+            "postrender": [],
+            "recreate_pods": false,
+            "render_subchart_notes": true,
+            "replace": false,
+            "repository": null,
+            "repository_ca_file": null,
+            "repository_cert_file": null,
+            "repository_key_file": null,
+            "repository_password": null,
+            "repository_username": null,
+            "reset_values": false,
+            "reuse_values": false,
+            "set": [
+              {
+                "name": "auth.database",
+                "type": "",
+                "value": "pixelwar"
+              },
+              {
+                "name": "auth.username",
+                "type": "",
+                "value": "pixelwar"
+              },
+              {
+                "name": "primary.livenessProbe.enabled",
+                "type": "",
+                "value": "true"
+              },
+              {
+                "name": "primary.persistence.enabled",
+                "type": "",
+                "value": "true"
+              },
+              {
+                "name": "primary.persistence.size",
+                "type": "",
+                "value": "1Gi"
+              },
+              {
+                "name": "primary.readinessProbe.enabled",
+                "type": "",
+                "value": "true"
+              },
+              {
+                "name": "primary.resources.limits.cpu",
+                "type": "",
+                "value": "500m"
+              },
+              {
+                "name": "primary.resources.limits.memory",
+                "type": "",
+                "value": "512Mi"
+              },
+              {
+                "name": "primary.resources.requests.cpu",
+                "type": "",
+                "value": "100m"
+              },
+              {
+                "name": "primary.resources.requests.memory",
+                "type": "",
+                "value": "256Mi"
+              }
+            ],
+            "set_list": [],
+            "set_sensitive": [
+              {
+                "name": "auth.password",
+                "type": "",
+                "value": "PixelWar2026!Secure"
+              }
+            ],
+            "skip_crds": false,
+            "status": "deployed",
+            "timeout": 300,
+            "upgrade_install": null,
+            "values": null,
+            "verify": false,
+            "version": "18.5.6",
+            "wait": true,
+            "wait_for_jobs": false
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "set_sensitive"
+              }
+            ]
+          ],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "kubernetes_namespace.pixel_war"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_config_map",
+      "name": "app_config",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "binary_data": {},
+            "data": {
+              "DB_HOST": "postgresql.pixel-war.svc.cluster.local",
+              "DB_PORT": "5432",
+              "GRID_SIZE": "50",
+              "LOG_LEVEL": "info",
+              "PORT": "3000"
+            },
+            "id": "pixel-war/app-config",
+            "immutable": false,
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {
+                  "app": "pixel-war",
+                  "managed-by": "terraform"
+                },
+                "name": "app-config",
+                "namespace": "pixel-war",
+                "resource_version": "981",
+                "uid": "a93050b7-b08b-4802-b742-0ab276807d10"
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "kubernetes_namespace.pixel_war"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_limit_range",
+      "name": "pixel_war",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "pixel-war/pixel-war-limits",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "pixel-war-limits",
+                "namespace": "pixel-war",
+                "resource_version": "987",
+                "uid": "229ac29e-a112-46ec-a775-5c85a2a460e8"
+              }
+            ],
+            "spec": [
+              {
+                "limit": [
+                  {
+                    "default": {
+                      "cpu": "200m",
+                      "memory": "256Mi"
+                    },
+                    "default_request": {
+                      "cpu": "100m",
+                      "memory": "128Mi"
+                    },
+                    "max": {
+                      "cpu": "1",
+                      "memory": "1Gi"
+                    },
+                    "max_limit_request_ratio": {},
+                    "min": {},
+                    "type": "Container"
+                  }
+                ]
+              }
+            ]
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "kubernetes_namespace.pixel_war"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_namespace",
+      "name": "pixel_war",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "pixel-war",
+            "metadata": [
+              {
+                "annotations": {
+                  "description": "ISIMA Pixel War 2026 — Namespace géré par Terraform"
+                },
+                "generate_name": "",
+                "generation": 0,
+                "labels": {
+                  "app": "pixel-war",
+                  "env": "production",
+                  "managed-by": "terraform"
+                },
+                "name": "pixel-war",
+                "resource_version": "978",
+                "uid": "4feec309-1d58-4abe-a7f8-37e63d6df001"
+              }
+            ],
+            "timeouts": null,
+            "wait_for_default_service_account": false
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiZGVsZXRlIjozMDAwMDAwMDAwMDB9fQ=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_resource_quota",
+      "name": "pixel_war",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "pixel-war/pixel-war-quota",
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {},
+                "name": "pixel-war-quota",
+                "namespace": "pixel-war",
+                "resource_version": "1797",
+                "uid": "2867c3fe-d595-43fb-a143-0c07df36edbc"
+              }
+            ],
+            "spec": [
+              {
+                "hard": {
+                  "limits.cpu": "4",
+                  "limits.memory": "4Gi",
+                  "pods": "20",
+                  "requests.cpu": "2",
+                  "requests.memory": "2Gi",
+                  "services": "10"
+                },
+                "scope_selector": [],
+                "scopes": []
+              }
+            ],
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMCwidXBkYXRlIjo2MDAwMDAwMDAwMH19",
+          "dependencies": [
+            "kubernetes_namespace.pixel_war"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "kubernetes_secret",
+      "name": "db_credentials",
+      "provider": "provider[\"registry.terraform.io/hashicorp/kubernetes\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "binary_data": null,
+            "binary_data_wo": null,
+            "binary_data_wo_revision": null,
+            "data": {
+              "DATABASE_URL": "postgresql://pixelwar:PixelWar2026!Secure@postgresql.pixel-war.svc.cluster.local:5432/pixelwar",
+              "POSTGRES_DB": "pixelwar",
+              "POSTGRES_PASSWORD": "PixelWar2026!Secure",
+              "POSTGRES_USER": "pixelwar"
+            },
+            "data_wo": null,
+            "data_wo_revision": null,
+            "id": "pixel-war/db-credentials",
+            "immutable": false,
+            "metadata": [
+              {
+                "annotations": {},
+                "generate_name": "",
+                "generation": 0,
+                "labels": {
+                  "app": "pixel-war",
+                  "managed-by": "terraform"
+                },
+                "name": "db-credentials",
+                "namespace": "pixel-war",
+                "resource_version": "982",
+                "uid": "d01fe90f-0bb6-4694-affb-ec4321580820"
+              }
+            ],
+            "timeouts": null,
+            "type": "Opaque",
+            "wait_for_service_account_token": true
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "data"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": "DATABASE_URL",
+                  "type": "string"
+                }
+              }
+            ],
+            [
+              {
+                "type": "get_attr",
+                "value": "data"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": "POSTGRES_PASSWORD",
+                  "type": "string"
+                }
+              }
+            ]
+          ],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMH19",
+          "dependencies": [
+            "kubernetes_namespace.pixel_war"
+          ]
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}

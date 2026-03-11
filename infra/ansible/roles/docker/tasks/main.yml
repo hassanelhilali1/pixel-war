@@ -1,0 +1,78 @@
+---
+# Role: docker — Installation et configuration de Docker Engine
+
+- name: Supprimer les anciennes versions de Docker
+  ansible.builtin.apt:
+    name:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc
+    state: absent
+
+- name: Créer le répertoire keyrings si nécessaire
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Télécharger la clé GPG officielle Docker
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+    force: true
+
+- name: Ajouter le dépôt Docker
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable"
+    state: present
+    update_cache: yes
+
+- name: Installer Docker Engine
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state:        present
+    update_cache: true
+
+- name: Ajouter l'utilisateur déployeur au groupe docker
+  ansible.builtin.user:
+    name:   "{{ deploy_user }}"
+    groups: docker
+    append: true
+
+- name: Activer et démarrer Docker
+  ansible.builtin.systemd:
+    name:    docker
+    enabled: true
+    state:   started
+
+- name: Configurer le daemon Docker (log rotation + data-root)
+  ansible.builtin.copy:
+    dest:    /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "10m",
+          "max-file": "3"
+        },
+        "exec-opts": ["native.cgroupdriver=systemd"]
+      }
+    mode: "0644"
+  notify: Restart Docker
+
+- name: Récupérer la version Docker installée
+  ansible.builtin.command: docker --version
+  register:     docker_version
+  changed_when: false
+
+- name: Afficher la version Docker
+  ansible.builtin.debug:
+    msg: "Docker installé : {{ docker_version.stdout }}"

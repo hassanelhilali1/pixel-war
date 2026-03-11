@@ -1,0 +1,65 @@
+---
+# Role: kubernetes_tools — Installation de kubectl et Helm
+
+# ── kubectl ────────────────────────────────────────────────────────────────────
+- name: Télécharger kubectl {{ kubectl_version }}
+  ansible.builtin.get_url:
+    url:  "https://dl.k8s.io/release/v{{ kubectl_version }}/bin/linux/amd64/kubectl"
+    dest: /usr/local/bin/kubectl
+    mode: "0755"
+
+- name: Vérifier kubectl
+  ansible.builtin.command: kubectl version --client --short
+  register:     kubectl_check
+  changed_when: false
+  ignore_errors: true
+
+- name: Afficher la version kubectl
+  ansible.builtin.debug:
+    msg: "{{ kubectl_check.stdout }}"
+
+# ── Helm ───────────────────────────────────────────────────────────────────────
+- name: Télécharger Helm {{ helm_version }}
+  ansible.builtin.get_url:
+    url:  "https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz"
+    dest: /tmp/helm.tar.gz
+    mode: "0644"
+
+- name: Extraire Helm
+  ansible.builtin.unarchive:
+    src:        /tmp/helm.tar.gz
+    dest:       /tmp/
+    remote_src: true
+
+- name: Installer Helm dans /usr/local/bin
+  ansible.builtin.copy:
+    src:        /tmp/linux-amd64/helm
+    dest:       /usr/local/bin/helm
+    mode:       "0755"
+    remote_src: true
+
+- name: Nettoyer les archives temporaires
+  ansible.builtin.file:
+    path:  "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/helm.tar.gz
+    - /tmp/linux-amd64
+
+- name: Ajouter les dépôts Helm essentiels
+  become:      false
+  become_user: "{{ deploy_user }}"
+  ansible.builtin.command: "helm repo add {{ item.name }} {{ item.url }}"
+  loop:
+    - { name: bitnami,               url: "https://charts.bitnami.com/bitnami" }
+    - { name: prometheus-community,  url: "https://prometheus-community.github.io/helm-charts" }
+    - { name: ingress-nginx,         url: "https://kubernetes.github.io/ingress-nginx" }
+  register:     helm_repo_add
+  changed_when: "'already exists' not in helm_repo_add.stdout"
+  ignore_errors: true
+
+- name: Mettre à jour les dépôts Helm
+  become:      false
+  become_user: "{{ deploy_user }}"
+  ansible.builtin.command: helm repo update
+  changed_when: false

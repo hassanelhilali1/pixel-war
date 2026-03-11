@@ -1,0 +1,80 @@
+{{- if .Values.networkPolicy.enabled }}
+# ── Politique 1 : Le backend peut recevoir du frontend et de l'Ingress ─────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-ingress-policy
+  labels:
+    {{- include "pixel-war.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "pixel-war.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Autorise le frontend → backend
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: frontend
+      ports:
+        - port: 3000
+    # Autorise l'Ingress Controller → backend
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 3000
+    # Autorise Prometheus → /metrics
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 3000
+  egress:
+    # Autorise backend → PostgreSQL uniquement
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - port: 5432
+    # DNS
+    - ports:
+        - port:     53
+          protocol: UDP
+        - port:     53
+          protocol: TCP
+---
+# ── Politique 2 : Le frontend ne peut accéder qu'au backend ───────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-egress-policy
+  labels:
+    {{- include "pixel-war.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "pixel-war.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: backend
+      ports:
+        - port: 3000
+    - ports:
+        - port:     53
+          protocol: UDP
+        - port:     53
+          protocol: TCP
+{{- end }}

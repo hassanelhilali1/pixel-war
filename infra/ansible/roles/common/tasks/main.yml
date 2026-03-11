@@ -1,0 +1,45 @@
+---
+# Role: common — Paquets système de base et configuration générale
+
+- name: Mettre à jour le cache APT
+  ansible.builtin.apt:
+    update_cache:     true
+    cache_valid_time: 3600
+
+- name: Installer les paquets système nécessaires
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - software-properties-common
+      - git
+      - unzip
+      - jq
+      - wget
+      - vim
+      - htop
+    state: present
+
+- name: Configurer le fuseau horaire
+  community.general.timezone:
+    name: Europe/Paris
+
+- name: Activer ip_forward (requis pour Kubernetes)
+  ansible.posix.sysctl:
+    name:   net.ipv4.ip_forward
+    value:  "1"
+    state:  present
+    reload: true
+
+- name: Désactiver le swap (requis pour Kubernetes)
+  ansible.builtin.command: swapoff -a
+  changed_when: false
+
+- name: Désactiver le swap de façon permanente (fstab)
+  ansible.builtin.replace:
+    path:    /etc/fstab
+    regexp:  '^([^#].* swap .*)$'
+    replace: '# \1'

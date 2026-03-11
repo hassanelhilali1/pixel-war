@@ -1,0 +1,76 @@
+---
+# Role: minikube — Installation, démarrage et configuration de Minikube
+
+- name: Télécharger Minikube {{ minikube_version }}
+  ansible.builtin.get_url:
+    url:  "https://storage.googleapis.com/minikube/releases/v{{ minikube_version }}/minikube-linux-amd64"
+    dest: /usr/local/bin/minikube
+    mode: "0755"
+
+- name: Vérifier que Minikube est installé
+  ansible.builtin.command: minikube version
+  register:     minikube_check
+  changed_when: false
+
+- name: Afficher la version Minikube
+  ansible.builtin.debug:
+    msg: "{{ minikube_check.stdout_lines[0] }}"
+
+# Démarrer Minikube en tant qu'utilisateur non-root
+- name: Vérifier si Minikube est déjà démarré
+  become:      false
+  become_user: "{{ deploy_user }}"
+  ansible.builtin.command: minikube status
+  register:     minikube_status
+  changed_when: false
+  failed_when:  false
+
+- name: Démarrer Minikube
+  become:      false
+  become_user: "{{ deploy_user }}"
+  ansible.builtin.command: >
+    minikube start
+    --driver={{ minikube_driver }}
+    --cpus={{ minikube_cpus }}
+    --memory={{ minikube_memory }}
+    --kubernetes-version=v{{ kubectl_version }}
+    --container-runtime=docker
+  when: "'Running' not in minikube_status.stdout"
+  register:     minikube_start
+  changed_when: minikube_start.rc == 0
+
+# Activer les addons nécessaires
+- name: Activer les addons Minikube
+  become:      false
+  become_user: "{{ deploy_user }}"
+  ansible.builtin.command: "minikube addons enable {{ item }}"
+  loop:
+    - ingress
+    - ingress-dns
+    - metrics-server
+    - dashboard
+  register:     addon_result
+  changed_when: "'was successfully enabled' in addon_result.stdout"
+
+# Configurer /etc/hosts pour l'accès local
+- name: Récupérer l'IP Minikube
+  become:      false
+  become_user: "{{ deploy_user }}"
+  ansible.builtin.command: minikube ip
+  register:     minikube_ip
+  changed_when: false
+
+- name: Configurer /etc/hosts pour pixel-war.local et grafana.local
+  ansible.builtin.lineinfile:
+    path:   /etc/hosts
+    regexp: "{{ item.regexp }}"
+    line:   "{{ minikube_ip.stdout }} {{ item.host }}"
+    state:  present
+  loop:
+    - { regexp: 'pixel-war\.local',   host: 'pixel-war.local' }
+    - { regexp: 'grafana\.local',     host: 'grafana.local' }
+    - { regexp: 'prometheus\.local',  host: 'prometheus.local' }
+
+- name: Afficher l'IP Minikube
+  ansible.builtin.debug:
+    msg: "Minikube IP : {{ minikube_ip.stdout }}"

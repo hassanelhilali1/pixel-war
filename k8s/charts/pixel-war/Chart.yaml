@@ -1,0 +1,19 @@
+apiVersion: v2
+name: pixel-war
+description: >
+  ISIMA Pixel War 2026 — Application collaborative de pixel en temps réel.
+  Stack Cloud-Native : React + Node.js + PostgreSQL sur Kubernetes.
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - pixel-war
+  - websocket
+  - real-time
+  - isima
+  - devops
+
+maintainers:
+  - name: ISIMA DevOps Team
+    email: devops@isima.fr

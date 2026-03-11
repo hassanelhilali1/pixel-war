@@ -1,0 +1,39 @@
+---
+# Role: terraform_tool — Installation de Terraform
+
+- name: Télécharger Terraform {{ terraform_version }}
+  ansible.builtin.get_url:
+    url:  "https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip"
+    dest: /tmp/terraform.zip
+    mode: "0644"
+
+- name: Extraire Terraform
+  ansible.builtin.unarchive:
+    src:        /tmp/terraform.zip
+    dest:       /usr/local/bin/
+    remote_src: true
+    mode:       "0755"
+
+- name: Nettoyer l'archive
+  ansible.builtin.file:
+    path:  /tmp/terraform.zip
+    state: absent
+
+- name: Vérifier Terraform
+  ansible.builtin.command: terraform version
+  register:     terraform_check
+  changed_when: false
+
+- name: Afficher la version Terraform
+  ansible.builtin.debug:
+    msg: "{{ terraform_check.stdout_lines[0] }}"
+
+# Activer l'autocomplétion pour l'utilisateur déployeur
+- name: Activer l'autocomplétion Terraform (bash)
+  become:      false
+  become_user: "{{ deploy_user }}"
+  ansible.builtin.lineinfile:
+    path:   "{{ ansible_env.HOME }}/.bashrc"
+    line:   "complete -C /usr/local/bin/terraform terraform"
+    state:  present
+  ignore_errors: true

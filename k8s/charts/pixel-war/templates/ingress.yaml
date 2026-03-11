@@ -1,0 +1,57 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "pixel-war.fullname" . }}
+  labels:
+    {{- include "pixel-war.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout:    "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout:    "3600"
+    # Support WebSocket (socket.io) — géré nativement par nginx-ingress >= 0.9
+    nginx.ingress.kubernetes.io/proxy-http-version:    "1.1"
+spec:
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: {{ .Values.ingress.tlsSecretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          # WebSocket
+          - path:     /socket.io/
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: backend
+                port:
+                  number: {{ .Values.backend.service.port }}
+          # API REST
+          - path:     /api/
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: {{ .Values.backend.service.port }}
+          # Métriques (accès interne seulement — à restreindre en prod)
+          - path:     /metrics
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: {{ .Values.backend.service.port }}
+          # Frontend SPA
+          - path:     /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: {{ .Values.frontend.service.port }}
+{{- end }}

@@ -1,0 +1,70 @@
+# ── Développement local — équivalent de la stack Kubernetes ──────────────────
+# Usage : docker compose up --build
+# Application : http://localhost
+# Backend API : http://localhost:3000
+# Metrics     : http://localhost:3000/metrics
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     pixelwar
+      POSTGRES_PASSWORD: pixelwar
+      POSTGRES_DB:       pixelwar
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test:     ["CMD-SHELL", "pg_isready -U pixelwar"]
+      interval: 5s
+      timeout:  5s
+      retries:  10
+    networks:
+      - pixel-war-net
+
+  # ── Backend ─────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./app/backend
+      target:  production
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://pixelwar:pixelwar@postgres:5432/pixelwar
+      PORT:         "3000"
+      GRID_SIZE:    "50"
+      LOG_LEVEL:    info
+      FRONTEND_URL: "http://localhost"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pixel-war-net
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./app/frontend
+      target:  production
+      args:
+        VITE_GRID_SIZE: "50"
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - pixel-war-net
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  pixel-war-net:
+    driver: bridge

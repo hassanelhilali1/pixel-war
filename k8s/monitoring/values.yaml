@@ -1,0 +1,133 @@
+# ── kube-prometheus-stack — values Pixel War ─────────────────────────────────
+# Usage :
+#   helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+#     --namespace monitoring --create-namespace \
+#     --values k8s/monitoring/values.yaml
+
+# ── Grafana ───────────────────────────────────────────────────────────────────
+grafana:
+  adminPassword: "prom-operator"
+
+  ingress:
+    enabled:          true
+    ingressClassName: nginx
+    hosts:
+      - grafana.local
+
+  # Dashboards provisionés automatiquement
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name:      pixel-war
+          orgId:     1
+          folder:    "Pixel War"
+          type:      file
+          disableDeletion: false
+          editable:  true
+          options:
+            path: /var/lib/grafana/dashboards/pixel-war
+
+  dashboards:
+    pixel-war:
+      pixel-war-app:
+        json: |
+          {
+            "title": "Pixel War — Application",
+            "uid": "pixel-war-app",
+            "panels": [
+              {
+                "title": "Pixels posés / seconde",
+                "type": "graph",
+                "targets": [{"expr": "rate(pixels_placed_total[1m])"}]
+              },
+              {
+                "title": "Connexions WebSocket actives",
+                "type": "stat",
+                "targets": [{"expr": "ws_connections_active"}]
+              },
+              {
+                "title": "Latence API p99",
+                "type": "graph",
+                "targets": [{"expr": "histogram_quantile(0.99, rate(api_request_duration_seconds_bucket[5m]))"}]
+              },
+              {
+                "title": "Erreurs 5xx",
+                "type": "graph",
+                "targets": [{"expr": "rate(api_request_duration_seconds_count{status_code=~'5..'}[5m])"}]
+              }
+            ]
+          }
+
+# ── Prometheus ────────────────────────────────────────────────────────────────
+prometheus:
+  ingress:
+    enabled:          true
+    ingressClassName: nginx
+    hosts:
+      - prometheus.local
+
+  prometheusSpec:
+    # Découverte automatique des ServiceMonitors dans tous les namespaces
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues:     false
+
+    # Scraping additionnel pour le backend Pixel War
+    additionalScrapeConfigs:
+      - job_name: pixel-war-backend
+        scrape_interval: 15s
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [pixel-war]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            target_label: __address__
+            regex:        "([^:]+)(?::\\d+)?;(\\d+)"
+            replacement:  "$1:$2"
+
+# ── Alertmanager ──────────────────────────────────────────────────────────────
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: 'default'
+      group_by: ['alertname', 'namespace']
+      routes:
+        - matchers:
+            - alertname = "KubePodCrashLooping"
+          receiver: 'default'
+    receivers:
+      - name: 'default'
+        # Configurer un vrai receiver (Slack, email…) en production
+
+# ── Règles d'alertes personnalisées ──────────────────────────────────────────
+additionalPrometheusRulesMap:
+  pixel-war-alerts:
+    groups:
+      - name: pixel-war
+        rules:
+          - alert: BackendHighLatency
+            expr:  histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m])) > 0.5
+            for:   2m
+            labels:
+              severity: warning
+            annotations:
+              summary:     "Latence API élevée (p95 > 500ms)"
+              description: "La latence p95 du backend est de {{ $value | humanizeDuration }}"
+
+          - alert: PixelWarBackendDown
+            expr:  up{job="pixel-war-backend"} == 0
+            for:   1m
+            labels:
+              severity: critical
+            annotations:
+              summary:     "Backend Pixel War indisponible"
+              description: "Le backend ne répond plus aux scrapes Prometheus"
