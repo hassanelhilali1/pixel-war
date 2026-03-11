@@ -87,6 +87,20 @@ describe('PATCH /api/pixel', () => {
     expect(res.status).toBe(400);
   });
 
+  it('rejette des coordonnées non-numériques', async () => {
+    const res = await request(app)
+      .patch('/api/pixel')
+      .send({ x: 'abc', y: 0, color: '#FFFFFF' });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejette des coordonnées décimales', async () => {
+    const res = await request(app)
+      .patch('/api/pixel')
+      .send({ x: 1.5, y: 0, color: '#FF0000' });
+    expect(res.status).toBe(400);
+  });
+
   it('retourne 500 en cas d\'erreur DB', async () => {
     pool.query.mockRejectedValueOnce(new Error('DB error'));
     const res = await request(app)
