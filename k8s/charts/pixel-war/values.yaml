@@ -51,6 +51,7 @@ backend:
   # Clés dans les ressources créées par Terraform
   secretName:    db-credentials
   configMapName: app-config
+  dbHost:        postgresql.pixel-war.svc.cluster.local
 
   hpa:
     enabled:     true
