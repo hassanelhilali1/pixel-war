@@ -1,22 +1,12 @@
 #!/usr/bin/env bash
-# =============================================================================
-# Pixel War 2026 — Script de déploiement automatisé 
-# =============================================================================
-# Usage :
-#   ./deploy.sh              # déploiement complet (prérequis déjà installés)
-#   ./deploy.sh --setup      # configure la machine hôte via Ansible puis déploie
-#   ./deploy.sh --monitoring # déploiement complet + Prometheus/Grafana
-#   ./deploy.sh --destroy    # supprime toute la stack
-#
-# Première utilisation sur une machine vierge :
-#   ./deploy.sh --setup
-#
-# Prérequis (installés automatiquement avec --setup) :
-#   ansible, docker, minikube, kubectl, helm, terraform
-# =============================================================================
+# script de deploiement pixel war
+# ./deploy.sh           -> deploie tout
+# ./deploy.sh --setup   -> installe les outils + deploie
+# ./deploy.sh --monitoring -> avec prometheus et grafana
+# ./deploy.sh --destroy -> supprime tout
 set -euo pipefail
 
-# ── Couleurs ──────────────────────────────────────────────────────────────────
+# couleurs pour les logs
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; BOLD='\033[1m'; NC='\033[0m'
 
@@ -26,7 +16,7 @@ log_warn()    { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 log_step()    { echo -e "\n${BOLD}${BLUE}▶ $*${NC}"; }
 die()         { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 
-# ── Variables ─────────────────────────────────────────────────────────────────
+# variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MONITORING=false
 DESTROY=false
@@ -36,7 +26,7 @@ MINIKUBE_MEMORY=6g
 MINIKUBE_DRIVER=docker
 MINIKUBE_WORKERS=2   # nombre de workers requis (hors control-plane)
 
-# ── Arguments ─────────────────────────────────────────────────────────────────
+# parsing des arguments
 for arg in "$@"; do
   case $arg in
     --monitoring) MONITORING=true ;;
@@ -52,7 +42,7 @@ for arg in "$@"; do
   esac
 done
 
-# ── Vérification des prérequis ────────────────────────────────────────────────
+# on verifie que tout est installé
 check_prereqs() {
   log_step "Vérification des prérequis"
   local missing=()
@@ -68,7 +58,7 @@ check_prereqs() {
   fi
 }
 
-# ── Étape 0 : Ansible (configuration machine hôte) ──────────────────────────
+# etape 0 : ansible pour configurer la machine
 run_ansible() {
   log_step "Étape 0 — Configuration de la machine hôte (Ansible)"
 
@@ -86,7 +76,7 @@ run_ansible() {
   log_success "Machine hôte configurée"
 }
 
-# ── Destroy ───────────────────────────────────────────────────────────────────
+# suppression de tout
 destroy_all() {
   log_step "Suppression de la stack"
   log_warn "Suppression du déploiement Helm..."
@@ -108,7 +98,7 @@ destroy_all() {
   exit 0
 }
 
-# ── Étape 1 : Minikube ────────────────────────────────────────────────────────
+# etape 1 : demarrer minikube
 start_minikube() {
   log_step "Étape 1 — Démarrage de Minikube"
   local status
@@ -126,7 +116,7 @@ start_minikube() {
     log_success "Minikube démarré"
   fi
 
-  # ── Vérification et ajout des workers manquants ───────────────────────────
+  # on check si il manque des workers
   local current_workers
   current_workers=$(kubectl get nodes --no-headers 2>/dev/null \
     | grep -v "control-plane" | wc -l | tr -d ' ' || true)
@@ -152,14 +142,10 @@ start_minikube() {
   kubectl get nodes
 }
 
-# ── Étape 2 : Build des images dans Minikube ─────────────────────────────────
+# etape 2 : build les images docker
 build_images() {
   log_step "Étape 2 — Build des images Docker"
-  # Garantir qu'on utilise le Docker SYSTÈME (pas le daemon interne de Minikube).
-  # Si l'utilisateur avait fait `eval $(minikube docker-env)` dans son shell,
-  # DOCKER_HOST pointe vers Minikube (API 1.43). docker build fonctionne grâce
-  # à BuildKit (gRPC, négocie la version), mais docker save utilise l'API REST
-  # classique et échoue avec "client version 1.52 is too new".
+  # faut utiliser le docker du systeme, pas celui de minikube sinon ca bug
   eval "$(minikube docker-env -u)" 2>/dev/null || true
   unset DOCKER_HOST DOCKER_TLS_VERIFY DOCKER_CERT_PATH DOCKER_API_VERSION
 
@@ -190,7 +176,7 @@ build_images() {
   log_success "pixel-war-frontend:latest chargée dans Minikube"
 }
 
-# ── Étape 3 : Terraform ───────────────────────────────────────────────────────
+# etape 3 : terraform pour la bdd
 run_terraform() {
   log_step "Étape 3 — Provisioning Terraform"
   cd "$SCRIPT_DIR/infra/terraform"
@@ -207,7 +193,7 @@ run_terraform() {
   cd "$SCRIPT_DIR"
 }
 
-# ── Étape 4 : Helm deploy ─────────────────────────────────────────────────────
+# etape 4 : deploiement avec helm
 deploy_helm() {
   log_step "Étape 4 — Déploiement Helm"
   helm upgrade --install pixel-war "$SCRIPT_DIR/k8s/charts/pixel-war/" \
@@ -223,7 +209,7 @@ deploy_helm() {
   kubectl get pods -n pixel-war
 }
 
-# ── Étape 5 : DNS /etc/hosts ──────────────────────────────────────────────────
+# etape 5 : ajouter les dns dans /etc/hosts
 setup_dns() {
   log_step "Étape 5 — Configuration DNS locale"
   local minikube_ip
@@ -242,7 +228,7 @@ setup_dns() {
   done
 }
 
-# ── Étape 6 : Monitoring ──────────────────────────────────────────────────────
+# etape 6 : monitoring avec prometheus + grafana
 deploy_monitoring() {
   log_step "Étape 6 — Déploiement Monitoring (Prometheus + Grafana)"
 
@@ -261,7 +247,7 @@ deploy_monitoring() {
   log_success "Monitoring déployé"
 }
 
-# ── Étape 7 : Tunnel & résumé ─────────────────────────────────────────────────
+# etape 7 : tunnel minikube + recap
 start_tunnel() {
   log_step "Étape 7 — Lancement du tunnel Minikube"
   log_info "Démarrage en arrière-plan (PID stocké dans /tmp/minikube-tunnel.pid)..."
@@ -298,7 +284,7 @@ print_summary() {
   echo -e "${BOLD}${GREEN}════════════════════════════════════════${NC}\n"
 }
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# main────
 main() {
 
 

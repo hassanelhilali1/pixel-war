@@ -3,12 +3,12 @@ const client = require('prom-client');
 
 const register = new client.Registry();
 
-// Métriques système par défaut (CPU, mémoire, event loop…)
+// metriques par default genre cpu, ram etc
 client.collectDefaultMetrics({ register });
 
-// ── Métriques métier ──────────────────────────────────────────────────────────
+// nos metriques custom
 
-/** Compteur : nombre de pixels posés (label par couleur) */
+// compteur de pixels posés
 const pixelsPlacedTotal = new client.Counter({
   name:       'pixels_placed_total',
   help:       'Total number of pixels placed',
@@ -16,14 +16,14 @@ const pixelsPlacedTotal = new client.Counter({
   registers:  [register],
 });
 
-/** Gauge : connexions WebSocket actives */
+// nombre de gens connectés en websocket
 const wsConnectionsActive = new client.Gauge({
   name:      'ws_connections_active',
   help:      'Number of active WebSocket connections',
   registers: [register],
 });
 
-/** Histogramme : latence des requêtes HTTP par route */
+// temps de reponse des requetes http
 const httpRequestDuration = new client.Histogram({
   name:       'api_request_duration_seconds',
   help:       'Duration of HTTP API requests in seconds',
@@ -32,7 +32,7 @@ const httpRequestDuration = new client.Histogram({
   registers:  [register],
 });
 
-/** Histogramme : latence des requêtes PostgreSQL */
+// temps des requetes sql
 const dbQueryDuration = new client.Histogram({
   name:       'db_query_duration_seconds',
   help:       'Duration of PostgreSQL queries in seconds',

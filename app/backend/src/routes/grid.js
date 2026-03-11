@@ -6,10 +6,7 @@ const { pixelsPlacedTotal, dbQueryDuration } = require('../metrics');
 const GRID_SIZE = parseInt(process.env.GRID_SIZE || '50', 10);
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
-/**
- * Valide les paramètres d'un pixel.
- * @returns {string|null} Message d'erreur ou null si valide.
- */
+// verifie que les params du pixel sont valides
 function validatePixel(x, y, color) {
   if (typeof x !== 'number' || typeof y !== 'number') return 'x et y doivent être des nombres';
   if (!Number.isInteger(x) || !Number.isInteger(y))   return 'x et y doivent être des entiers';
@@ -19,14 +16,11 @@ function validatePixel(x, y, color) {
   return null;
 }
 
-/**
- * Crée le routeur de la grille.
- * @param {import('socket.io').Server} io
- */
+// creation du router pour la grille
 function createGridRouter(io) {
   const router = express.Router();
 
-  // ── GET /api/grid — retourne tous les pixels non-blancs ───────────────────
+  // recuperer tous les pixels
   router.get('/grid', async (_req, res) => {
     const end = dbQueryDuration.startTimer({ operation: 'select_grid' });
     try {
@@ -42,7 +36,7 @@ function createGridRouter(io) {
     }
   });
 
-  // ── PATCH /api/pixel — met à jour un pixel ────────────────────────────────
+  // modifier un pixel
   router.patch('/pixel', async (req, res) => {
     const { x, y, color } = req.body;
 
@@ -63,10 +57,10 @@ function createGridRouter(io) {
       );
       end();
 
-      // Instrumentation Prometheus
+      // on incremente le compteur prometheus
       pixelsPlacedTotal.inc({ color });
 
-      // Diffusion en temps réel à tous les clients connectés
+      // on envoie la maj a tout le monde via websocket
       io.emit('pixel:update', { x, y, color });
 
       res.json({ x, y, color });

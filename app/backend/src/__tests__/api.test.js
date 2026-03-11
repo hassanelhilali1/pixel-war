@@ -1,9 +1,9 @@
 'use strict';
-// Simuler l'environnement de test avant tout import
+// variables d'env pour les tests
 process.env.DATABASE_URL = 'postgresql://test:test@localhost/test_pixel_war';
 process.env.GRID_SIZE    = '50';
 
-// ── Mocks ─────────────────────────────────────────────────────────────────────
+// on mock la db et les migrations
 jest.mock('../db/pool', () => ({
   pool: { query: jest.fn(), connect: jest.fn() },
 }));
@@ -18,7 +18,7 @@ const { pool }  = require('../db/pool');
 
 beforeEach(() => jest.clearAllMocks());
 
-// ── /api/health ───────────────────────────────────────────────────────────────
+// tests health check
 describe('GET /api/health', () => {
   it('retourne 200 quand la DB répond', async () => {
     pool.query.mockResolvedValueOnce({ rows: [] });
@@ -36,7 +36,7 @@ describe('GET /api/health', () => {
   });
 });
 
-// ── GET /api/grid ─────────────────────────────────────────────────────────────
+// tests pour recuperer la grille
 describe('GET /api/grid', () => {
   it('retourne un tableau de pixels', async () => {
     pool.query.mockResolvedValueOnce({
@@ -55,7 +55,7 @@ describe('GET /api/grid', () => {
   });
 });
 
-// ── PATCH /api/pixel ──────────────────────────────────────────────────────────
+// tests pour poser un pixel
 describe('PATCH /api/pixel', () => {
   it('met à jour un pixel valide', async () => {
     pool.query.mockResolvedValueOnce({ rows: [] });

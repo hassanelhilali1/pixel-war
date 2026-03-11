@@ -1,11 +1,8 @@
 import { memo, useCallback } from 'react';
 
-const CELL_SIZE = 12; // px
+const CELL_SIZE = 12; // taille d'une case en pixel
 
-/**
- * Grille de pixels.
- * Optimisée avec React.memo pour éviter les re-renders inutiles.
- */
+// composant grille, memo pour pas re-render tout le temps
 const Grid = memo(function Grid({ grid, gridSize, onPixelClick, disabled }) {
   const handleClick = useCallback(
     (e) => {

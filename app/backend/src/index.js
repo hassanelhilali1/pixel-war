@@ -25,23 +25,23 @@ const io     = new Server(server, {
   cors: { origin: FRONTEND_URL, methods: ['GET', 'POST'] },
 });
 
-// ── Middlewares ───────────────────────────────────────────────────────────────
+// middlewares de base
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: FRONTEND_URL }));
 app.use(express.json({ limit: '10kb' }));
 
-// Instrumentation : durée des requêtes HTTP
+// on mesure le temps des requetes pour prometheus
 app.use((req, res, next) => {
   const end = httpRequestDuration.startTimer({ method: req.method, route: req.path });
   res.on('finish', () => end({ status_code: String(res.statusCode) }));
   next();
 });
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+// les routes
 app.use('/api', healthRouter);
 app.use('/api', createGridRouter(io));
 
-// Endpoint Prometheus
+// endpoint pour les metriques prometheus
 app.get('/metrics', async (_req, res) => {
   try {
     res.set('Content-Type', register.contentType);
@@ -51,7 +51,7 @@ app.get('/metrics', async (_req, res) => {
   }
 });
 
-// ── WebSocket ─────────────────────────────────────────────────────────────────
+// gestion des websockets (pour le temps reel)
 io.on('connection', (socket) => {
   wsConnectionsActive.inc();
   console.log(`[WS] Client connected:    ${socket.id}`);
@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// ── Bootstrap ─────────────────────────────────────────────────────────────────
+// lancement du serveur
 async function bootstrap() {
   await migrate();
   server.listen(PORT, () => {
