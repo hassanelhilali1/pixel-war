@@ -129,7 +129,7 @@ start_minikube() {
   # ── Vérification et ajout des workers manquants ───────────────────────────
   local current_workers
   current_workers=$(kubectl get nodes --no-headers 2>/dev/null \
-    | grep -v "control-plane" | wc -l | tr -d ' ')
+    | grep -v "control-plane" | wc -l | tr -d ' ' || true)
 
   if [[ "$current_workers" -lt "$MINIKUBE_WORKERS" ]]; then
     local to_add=$(( MINIKUBE_WORKERS - current_workers ))
@@ -250,7 +250,7 @@ deploy_monitoring() {
     log_info "Ajout du repo prometheus-community..."
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
   fi
-  helm repo update prometheus-community -q
+  helm repo update prometheus-community
 
   helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
     --namespace monitoring \
